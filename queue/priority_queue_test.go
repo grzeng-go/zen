@@ -24,7 +24,8 @@ func TestPriorityQueue(t *testing.T) {
 
 	// Create a priority queue, put the items in it, and
 	// establish the priority queue (heap) invariants.
-	pq := NewPQ(items...)
+	pq := NewPq(items...)
+	//pq := NewPqWithStrategy(func(i, j int) bool { return i< j }, items...)
 
 	// Insert a new item and then modify its priority.
 	item := &Item{

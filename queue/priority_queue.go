@@ -9,35 +9,38 @@ type Item struct {
 }
 
 // A PriorityQueue implements heap.Interface and holds Items.
-type items []*Item
-
-func (items items) Len() int { return len(items) }
-
-func (items items) Less(i, j int) bool {
-	// We want Pop to give us the highest, not lowest, priority so we use greater than here.
-	return items[i].Priority > items[j].Priority
+type items struct {
+	i        []*Item
+	strategy func(i, j int) bool
 }
 
-func (items items) Swap(i, j int) {
-	items[i], items[j] = items[j], items[i]
-	items[i].Index = i
-	items[j].Index = j
+func (items *items) Len() int { return len(items.i) }
+
+func (items *items) Less(i, j int) bool {
+	// We want Pop to give us the highest, not lowest, priority so we use greater than here.
+	return items.strategy(items.i[i].Priority, items.i[j].Priority)
+}
+
+func (items *items) Swap(i, j int) {
+	items.i[i], items.i[j] = items.i[j], items.i[i]
+	items.i[i].Index = i
+	items.i[j].Index = j
 }
 
 func (items *items) Push(x interface{}) {
-	n := len(*items)
+	n := len(items.i)
 	item := x.(*Item)
 	item.Index = n
-	*items = append(*items, item)
+	items.i = append(items.i, item)
 }
 
 func (items *items) Pop() interface{} {
-	old := *items
+	old := items.i
 	n := len(old)
 	item := old[n-1]
 	old[n-1] = nil  // avoid memory leak
 	item.Index = -1 // for safety
-	*items = old[0 : n-1]
+	items.i = old[0 : n-1]
 	return item
 }
 
@@ -49,23 +52,41 @@ func (items *items) update(item *Item, value interface{}, priority int) {
 }
 
 type PriorityQueue struct {
-	pq items
+	pq *items
 }
 
-func NewPQ(items ...*Item) *PriorityQueue {
+var DefaultStrategy = func(i, j int) bool {
+	return i > j
+}
+
+func NewPq(item ...*Item) *PriorityQueue {
 	pq := &PriorityQueue{
-		pq: items,
+		pq: &items{
+			i:        item,
+			strategy: DefaultStrategy,
+		},
 	}
-	heap.Init(&pq.pq)
+	heap.Init(pq.pq)
+	return pq
+}
+
+func NewPqWithStrategy(strategy func(i, j int) bool, item ...*Item) *PriorityQueue {
+	pq := &PriorityQueue{
+		pq: &items{
+			i:        item,
+			strategy: strategy,
+		},
+	}
+	heap.Init(pq.pq)
 	return pq
 }
 
 func (pq *PriorityQueue) Push(item *Item) {
-	heap.Push(&pq.pq, item)
+	heap.Push(pq.pq, item)
 }
 
 func (pq *PriorityQueue) Pop() *Item {
-	return heap.Pop(&pq.pq).(*Item)
+	return heap.Pop(pq.pq).(*Item)
 }
 
 func (pq *PriorityQueue) Update(item *Item, value interface{}, priority int) {
