@@ -27,13 +27,24 @@ func TestPriorityQueue(t *testing.T) {
 	pq := NewPq(items...)
 	//pq := NewPqWithStrategy(func(i, j int) bool { return i< j }, items...)
 
+	// Get
+	i := pq.Get()
+	fmt.Printf("%.2d:%s ", i.Priority, i.Value)
+
 	// Insert a new item and then modify its priority.
 	item := &Item{
 		Value:    "orange",
 		Priority: 1,
 	}
 	pq.Push(item)
+
+	i = pq.Get()
+	fmt.Printf("%.2d:%s ", i.Priority, i.Value)
+
 	pq.Update(item, item.Value, 5)
+
+	i = pq.Get()
+	fmt.Printf("%.2d:%s ", i.Priority, i.Value)
 
 	// Take the items out; they arrive in decreasing priority order.
 	for pq.Len() > 0 {

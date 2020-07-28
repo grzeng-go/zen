@@ -4,14 +4,14 @@ import "container/heap"
 
 type Item struct {
 	Value    interface{}
-	Priority int
+	Priority interface{}
 	Index    int
 }
 
 // A PriorityQueue implements heap.Interface and holds Items.
 type items struct {
 	i        []*Item
-	strategy func(i, j int) bool
+	strategy func(i, j interface{}) bool
 }
 
 func (items *items) Len() int { return len(items.i) }
@@ -45,7 +45,7 @@ func (items *items) Pop() interface{} {
 }
 
 // update modifies the priority and value of an Item in the queue.
-func (items *items) update(item *Item, value interface{}, priority int) {
+func (items *items) update(item *Item, value interface{}, priority interface{}) {
 	item.Value = value
 	item.Priority = priority
 	heap.Fix(items, item.Index)
@@ -55,8 +55,8 @@ type PriorityQueue struct {
 	pq *items
 }
 
-var DefaultStrategy = func(i, j int) bool {
-	return i > j
+var DefaultStrategy = func(i, j interface{}) bool {
+	return i.(int) > j.(int)
 }
 
 func NewPq(item ...*Item) *PriorityQueue {
@@ -70,7 +70,7 @@ func NewPq(item ...*Item) *PriorityQueue {
 	return pq
 }
 
-func NewPqWithStrategy(strategy func(i, j int) bool, item ...*Item) *PriorityQueue {
+func NewPqWithStrategy(strategy func(i, j interface{}) bool, item ...*Item) *PriorityQueue {
 	pq := &PriorityQueue{
 		pq: &items{
 			i:        item,
@@ -89,7 +89,14 @@ func (pq *PriorityQueue) Pop() *Item {
 	return heap.Pop(pq.pq).(*Item)
 }
 
-func (pq *PriorityQueue) Update(item *Item, value interface{}, priority int) {
+func (pq *PriorityQueue) Get() *Item {
+	if pq.Len() == 0 {
+		return nil
+	}
+	return pq.pq.i[0]
+}
+
+func (pq *PriorityQueue) Update(item *Item, value interface{}, priority interface{}) {
 	pq.pq.update(item, value, priority)
 }
 
