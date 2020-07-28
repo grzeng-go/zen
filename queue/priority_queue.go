@@ -1,6 +1,8 @@
 package queue
 
-import "container/heap"
+import (
+	"container/heap"
+)
 
 type Item struct {
 	Value    interface{}
