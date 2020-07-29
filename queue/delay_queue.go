@@ -6,8 +6,9 @@ import (
 	"time"
 )
 
-func getDelay(item Item) time.Duration {
-	return time.Unix(item.Priority.(int64), 0).Sub(time.Now())
+type Delayed interface {
+	Item
+	GetDelay() time.Duration
 }
 
 type DelayQueue struct {
@@ -27,11 +28,16 @@ func NewDQ() *DelayQueue {
 	return dq
 }
 
-func (dq *DelayQueue) Offer(o interface{}, d time.Duration) {
-	e := &Item{
-		Value:    o,
-		Priority: time.Now().Add(d).Unix(),
+func NewDQWithStrategy(strategy Strategy) *DelayQueue {
+	dq := &DelayQueue{
+		mutex:    sync.Mutex{},
+		pq:       NewPqWithStrategy(strategy),
+		noticeCh: make(chan struct{}),
 	}
+	return dq
+}
+
+func (dq *DelayQueue) Offer(e Delayed) {
 	dq.pq.Push(e)
 	go func() {
 		dq.noticeCh <- struct{}{}
@@ -50,11 +56,11 @@ func (dq *DelayQueue) Take(ctx context.Context) interface{} {
 		default:
 		}
 		item := dq.pq.Get()
-		if item != nil {
-			delayed := getDelay(*item)
+		if delayed, ok := item.(Delayed); ok {
+			d := delayed.GetDelay()
 			select {
-			case <-time.After(delayed):
-				return dq.pq.Pop().Value
+			case <-time.After(d):
+				return dq.pq.Pop().(Delayed).GetValue()
 			case <-dq.noticeCh:
 			}
 		}

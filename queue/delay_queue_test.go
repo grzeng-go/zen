@@ -6,12 +6,48 @@ import (
 	"time"
 )
 
+type DelayedEntry struct {
+	Value    string
+	Priority int64
+	Index    int
+}
+
+func (item *DelayedEntry) GetValue() interface{} {
+	return item.Value
+}
+func (item *DelayedEntry) SetValue(v interface{}) {
+	item.Value = v.(string)
+}
+func (item *DelayedEntry) GetPriority() interface{} {
+	return item.Priority
+}
+func (item *DelayedEntry) SetPriority(p interface{}) {
+	item.Priority = p.(int64)
+}
+func (item *DelayedEntry) GetIndex() int {
+	return item.Index
+}
+func (item *DelayedEntry) SetIndex(i int) {
+	item.Index = i
+}
+
+func (item *DelayedEntry) GetDelay() time.Duration {
+	return time.Unix(item.Priority, 0).Sub(time.Now())
+}
+
+func newEntry(v string, t time.Duration) Delayed {
+	return &DelayedEntry{
+		Value:    v,
+		Priority: time.Now().Add(t).Unix(),
+	}
+}
+
 func TestDelayQueue(t *testing.T) {
 	dq := NewDQ()
-	dq.Offer("1", 10*time.Second)
-	dq.Offer("2", 2*time.Second)
-	dq.Offer("3", 1*time.Second)
-	dq.Offer("4", 15*time.Second)
+	dq.Offer(newEntry("1", 10*time.Second))
+	dq.Offer(newEntry("2", 2*time.Second))
+	dq.Offer(newEntry("3", 1*time.Second))
+	dq.Offer(newEntry("4", 15*time.Second))
 	t.Logf("time: %v", time.Now())
 	ctx, _ := context.WithTimeout(context.Background(), 17*time.Second)
 	for i := 0; i < 5; i++ {
